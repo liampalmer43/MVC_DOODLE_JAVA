@@ -25,11 +25,11 @@ public class Main{
         // create View, tell it about model (and controller)
         View view = new View(model);
         // tell Model about View. 
-        model.addObserver(view);
+//        model.addObserver(view);
         
         // create second view ...
         View2 view2 = new View2(model);
-        model.addObserver(view2);
+//        model.addObserver(view2);
         
         // create palette view ...
         Palette palette = new Palette(model);
@@ -38,6 +38,8 @@ public class Main{
         model.addObserver(linewidth);       
         DrawingBoard board = new DrawingBoard(model);
         model.addObserver(board);
+        Animation animation = new Animation(model);
+        model.addObserver(animation);
  
         // let all the views know that they're connected to the model
         model.notifyObservers();
@@ -52,9 +54,11 @@ public class Main{
         left_side.setPreferredSize(new Dimension(100, 500));
         left_side.add(palette);
         left_side.add(linewidth);
+        animation.setPreferredSize(new Dimension(800, 50));
         //palette.setMaximumSize(new Dimension(100, 600));
         p.add(board, BorderLayout.CENTER);        
         p.add(left_side, BorderLayout.LINE_START);
+        p.add(animation, BorderLayout.PAGE_END);
         
         frame.setPreferredSize(new Dimension(800,500));
         frame.pack();

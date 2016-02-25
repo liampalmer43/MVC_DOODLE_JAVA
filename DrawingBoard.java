@@ -21,12 +21,12 @@ class DrawingBoard extends JPanel implements Observer {
         MouseAdapter mouse_adapter = new MouseAdapter() {
             @Override
             public void mouseDragged(MouseEvent e) {
-                model.addPoint(e.getX(), e.getY());
+                model.addPoint(e.getX(), e.getY(), System.currentTimeMillis());
             }
 
             @Override
             public void mousePressed(MouseEvent e) {
-                model.addStroke(e.getX(), e.getY());
+                model.addStroke(e.getX(), e.getY(), System.currentTimeMillis());
             }
         };
         this.addMouseListener(mouse_adapter);
@@ -45,15 +45,41 @@ class DrawingBoard extends JPanel implements Observer {
         ArrayList< ArrayList<Model.Pair> > points = model.getPoints();
         ArrayList<Color> colors = model.getColors();
         ArrayList<Integer> widths = model.getWidths();
-        System.out.println(points.size());
+
+        
         for (int i = 0; i < points.size(); ++i) {
+            int start_stage = i * 100;
+            int end_stage = start_stage + 100;
+            if (model.getStage() <= start_stage) {
+                return;
+            }
             g2.setColor(colors.get(i));
             g2.setStroke(new BasicStroke(widths.get(i), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             ArrayList<Model.Pair> ps = points.get(i);
-            for (int j = 0; j < ps.size(); ++j) {
-                Model.Pair previous = j - 1 >= 0 ? ps.get(j-1) : ps.get(j);
-                Model.Pair current = ps.get(j);
-                g2.draw(new Line2D.Float(previous.x, previous.y, current.x, current.y));
+            if (model.getStage() >= end_stage) {
+                for (int j = 0; j < ps.size(); ++j) {
+                    Model.Pair previous = j - 1 >= 0 ? ps.get(j-1) : ps.get(j);
+                    Model.Pair current = ps.get(j);
+                    g2.draw(new Line2D.Float(previous.x, previous.y, current.x, current.y));
+                }
+            }
+            else {
+                // start_stage < model.getStage() <= end_stage
+                long start = ps.get(0).time;
+                long end = ps.get(ps.size() - 1).time;
+                long limit = (end - start) * (model.getStage() % 100) / 100;
+                limit += start;
+                for (int j = 0; j < ps.size(); ++j) {
+                    if (ps.get(j).time <= limit) {
+                        Model.Pair previous = j - 1 >= 0 ? ps.get(j-1) : ps.get(j);
+                        Model.Pair current = ps.get(j);
+                        g2.draw(new Line2D.Float(previous.x, previous.y, current.x, current.y));
+                    }
+                    else {
+                        return;
+                    }
+                }
+                
             }
         }
     }

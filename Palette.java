@@ -80,7 +80,5 @@ class Palette extends JPanel implements Observer {
     // Observer interface 
     @Override
     public void update(Observable arg0, Object arg1) {
-        System.out.println("View: update");
-        //button.setText(Integer.toString(model.getCounterValue()));      
     }
 } 
