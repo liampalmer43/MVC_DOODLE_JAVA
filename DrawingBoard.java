@@ -28,6 +28,10 @@ class DrawingBoard extends JPanel implements Observer {
             public void mousePressed(MouseEvent e) {
                 model.addStroke(e.getX(), e.getY(), System.currentTimeMillis());
             }
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                model.finishStroke();
+            }
         };
         this.addMouseListener(mouse_adapter);
         this.addMouseMotionListener(mouse_adapter);
@@ -42,21 +46,23 @@ class DrawingBoard extends JPanel implements Observer {
         Graphics2D g2 = (Graphics2D) g; // cast to get 2D drawing methods
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,  // antialiasing look nicer
                             RenderingHints.VALUE_ANTIALIAS_ON);
+        ArrayList<Model.Stroke> strokes = model.getStrokes();
+/*
         ArrayList< ArrayList<Model.Pair> > points = model.getPoints();
         ArrayList<Color> colors = model.getColors();
         ArrayList<Integer> widths = model.getWidths();
-
+*/
         
-        for (int i = 0; i < points.size(); ++i) {
+        for (int i = 0; i < strokes.size(); ++i) {
             int start_stage = i * 100;
             int end_stage = start_stage + 100;
-            if (model.getStage() <= start_stage) {
+            if (model.getStage() <= start_stage && strokes.get(i).complete) {
                 return;
             }
-            g2.setColor(colors.get(i));
-            g2.setStroke(new BasicStroke(widths.get(i), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-            ArrayList<Model.Pair> ps = points.get(i);
-            if (model.getStage() >= end_stage) {
+            g2.setColor(strokes.get(i).color);
+            g2.setStroke(new BasicStroke(strokes.get(i).width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            ArrayList<Model.Pair> ps = strokes.get(i).points;
+            if (model.getStage() >= end_stage || !strokes.get(i).complete) {
                 for (int j = 0; j < ps.size(); ++j) {
                     Model.Pair previous = j - 1 >= 0 ? ps.get(j-1) : ps.get(j);
                     Model.Pair current = ps.get(j);

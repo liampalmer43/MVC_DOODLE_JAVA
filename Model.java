@@ -4,18 +4,30 @@ import java.awt.*;
 import javax.swing.*;
 
 public class Model extends Observable { 
-    // the data in the model, just a counter
-    private int counter;    
+    // the data in the model
     private Color current_color = Color.black;
     private int current_width = 4;
     private int stage = 0;
     private JFrame frame;
 
-
-
+    ArrayList<Stroke> strokes = new ArrayList<Stroke>();
+/*
     ArrayList< ArrayList<Pair> > points = new ArrayList< ArrayList<Pair> >();
     ArrayList<Color> colors = new ArrayList<Color>();
     ArrayList<Integer> widths = new ArrayList<Integer>();
+*/
+    public static class Stroke {
+        public ArrayList<Pair> points;
+        public Color color;
+        public int width;
+        public boolean complete;
+        Stroke(ArrayList<Pair> new_points, Color new_color, int new_width) {
+            points = new_points;
+            color = new_color;
+            width = new_width;
+            complete = false;
+        }
+    }
 
     public static class Pair {
         public int x;
@@ -33,25 +45,56 @@ public class Model extends Observable {
     }
 
     public void addPoint(int x, int y, long time) {
+        if (strokes.size() == 0) {
+            return;
+        }
+        strokes.get(strokes.size() - 1).points.add(new Pair(x, y, time));
+/*
         points.get(points.size() - 1).add(new Pair(x, y, time));
+*/
         setChanged();
         notifyObservers();
     }
 
     public void addStroke(int x, int y, long time) {
         cleanPoints();
+
+        strokes.add(new Stroke(new ArrayList<Pair>(), current_color, current_width));
+        strokes.get(strokes.size() - 1).points.add(new Pair(x, y, time));
+        
+/*
         points.add(new ArrayList<Pair>());
         points.get(points.size() - 1).add(new Pair(x, y, time));
 System.out.println("ADDING STROKE " + current_color);
         colors.add(current_color);
         widths.add(current_width);
-        stage = points.size() * 100;
         assert colors.size() == points.size();
+*/      
+        stage = (strokes.size() - 1) * 100;
+        setChanged();
+        notifyObservers();
+    }
+
+    public void finishStroke() {
+        strokes.get(strokes.size() - 1).complete = true;
+        stage = strokes.size() * 100;
         setChanged();
         notifyObservers();
     }
 
     public void cleanPoints() {
+        for (int i = 0; i < strokes.size(); ++i) {
+            int start_stage = i * 100;
+            int end_stage = start_stage + 100;
+            if (stage < end_stage) {
+                for (int j = strokes.size() - 1; j >= i; --j) {
+                    strokes.remove(j);
+                }  
+                return;
+            }
+        }
+
+/*
 System.out.println("CLEANING");
         for (int i = 0; i < points.size(); ++i) {
 System.out.println("INSIDE LOOP");
@@ -104,6 +147,7 @@ System.out.println(ps.size());
                 
             }
         }
+*/
     }
 
     public void setStage(int new_stage) {
@@ -119,6 +163,20 @@ System.out.println(ps.size());
         return stage;
     }
 
+    public ArrayList<Stroke> getStrokes() {
+        return strokes;
+    }
+
+    public int getCompleteStrokes() {
+        int count = 0;
+        for (int i = 0; i < strokes.size(); ++i) {
+            if (strokes.get(i).complete) {
+                count++;
+            }
+        }
+        return count;
+    }
+/*
     public ArrayList< ArrayList<Pair> > getPoints() {
         return points;
     }
@@ -134,7 +192,7 @@ System.out.println(ps.size());
     public int getCounterValue() {
         return counter;
     }
-
+*/
     public void setColor(Color color) {
         current_color = color;
     }
@@ -154,13 +212,14 @@ System.out.println(ps.size());
     public JFrame getFrame() {
         return frame;
     }
-    
+ /*   
     public void incrementCounter() {
         if (counter < 5) {
             counter++;
             setChanged();
             notifyObservers();
         }
-    }   
+    }
+*/   
 }
 

@@ -53,12 +53,13 @@ class Animation extends JPanel implements Observer {
         // Must get the stage value before calling setMaximum.
         // Otherwise, setMaximum will change the slider and make its change handler call,
         // updating model.getStage() inappropriately.
+        int number_of_strokes = model.getCompleteStrokes();
         int stage = model.getStage();
-        slider.setMaximum(model.getPoints().size() * 100);
+        slider.setMaximum(number_of_strokes * 100);
         slider.setValue(stage);
         
         Hashtable<Integer, JLabel> labels = new Hashtable<Integer, JLabel>();
-        for (int i = 0; i <= model.getPoints().size() * 100; i += 100) {
+        for (int i = 0; i <= number_of_strokes * 100; i += 100) {
             labels.put(new Integer(i), new JLabel(Integer.toString(i / 100)));
         }
         slider.setLabelTable(labels);
