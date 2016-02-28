@@ -1,7 +1,8 @@
 import java.util.Observable;
-import java.util.*;
+import java.util.ArrayList;
 import java.awt.*;
 import javax.swing.*;
+import java.awt.event.*;    
 
 public class Model extends Observable { 
     // the data in the model
@@ -155,6 +156,35 @@ System.out.println(ps.size());
             return;
         }
         stage = new_stage;
+        setChanged();
+        notifyObservers();
+    }
+
+    public void play() {
+        stage = 0;
+        setChanged();
+        notifyObservers();
+        final Timer timer = new Timer(12, new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                if (stage >= strokes.size() * 100) {
+                    ((Timer)evt.getSource()).stop();
+                }
+                stage++;
+                setChanged();
+                notifyObservers();
+            }
+        });
+        timer.start();
+    }
+
+    public void start() {
+        stage = 0;
+        setChanged();
+        notifyObservers();
+    }
+
+    public void end() {
+        stage = strokes.size() * 100;
         setChanged();
         notifyObservers();
     }
