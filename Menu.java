@@ -13,6 +13,10 @@ class Menu extends JPanel implements Observer {
     private JMenuBar bar;
     private JMenu file;
     private JMenu view; 
+    private JMenuItem new_doodle;
+    private JMenuItem open;
+    private JMenuItem save;
+    private JMenuItem exit;
      
     // the model that this view is showing
     private Model model;
@@ -22,24 +26,25 @@ class Menu extends JPanel implements Observer {
         bar = new JMenuBar();
         file = new JMenu("File");
         view = new JMenu("View");
-        JMenuItem new_doodle = new JMenuItem("New");
+        new_doodle = new JMenuItem("New");
         new_doodle.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                model.newDoodle();
             }
         }); 
-        JMenuItem open = new JMenuItem("Open");
+        open = new JMenuItem("Open");
         open.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 model.selectFile();
             }
         }); 
-        JMenuItem save = new JMenuItem("Save");
+        save = new JMenuItem("Save");
         save.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 model.saveFile();
             }
         }); 
-        JMenuItem exit = new JMenuItem("Exit");
+        exit = new JMenuItem("Exit");
         exit.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 model.exit();
@@ -84,5 +89,6 @@ class Menu extends JPanel implements Observer {
     // Observer interface 
     @Override
     public void update(Observable arg0, Object arg1) {
+        save.setEnabled(model.getCompleteStrokes() > 0);
     }
 } 

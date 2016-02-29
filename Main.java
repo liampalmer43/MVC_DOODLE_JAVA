@@ -43,7 +43,7 @@ public class Main{
         full_view.add(board);
 
         Menu menu = new Menu(model);
-        model.addObserver(animation);
+        model.addObserver(menu);
         frame.setJMenuBar(menu.getMenuBar());
  
         // let all the views know that they're connected to the model
@@ -66,6 +66,7 @@ public class Main{
         model.setParent(p);
         model.setFixedView(fixed_view);
         model.setFullView(full_view);
+        model.setAnimation(animation);
 
         frame.setPreferredSize(new Dimension(800,500));
         frame.pack();

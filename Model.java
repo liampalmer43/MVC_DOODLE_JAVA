@@ -4,12 +4,7 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.event.*;    
-import java.io.FileWriter;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.FileReader;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
+import java.io.*;
 
 public class Model extends Observable { 
     // the data in the model
@@ -20,6 +15,7 @@ public class Model extends Observable {
     private JPanel parent;
     private JScrollPane fixed_view;
     private JPanel full_view;
+    private Animation animation;
     private static boolean full = true;
     private JFileChooser chooser;
 
@@ -30,7 +26,7 @@ public class Model extends Observable {
 
     ArrayList<Stroke> strokes = new ArrayList<Stroke>();
     
-    public static class Stroke {
+    public static class Stroke implements Serializable {
         public ArrayList<Pair> points;
         public Color color;
         public int width;
@@ -43,7 +39,7 @@ public class Model extends Observable {
         }
     }
 
-    public static class Pair {
+    public static class Pair implements Serializable {
         private float x;
         private float y;
         private long time;
@@ -77,8 +73,10 @@ public class Model extends Observable {
     
     Model() {
         chooser = new JFileChooser();
-        FileNameExtensionFilter filter = new FileNameExtensionFilter("Doodle Images", "doodle");
-        chooser.setFileFilter(filter);
+        FileNameExtensionFilter filter_text = new FileNameExtensionFilter("*.txt", "txt");
+        chooser.addChoosableFileFilter(filter_text);
+        FileNameExtensionFilter filter_binary = new FileNameExtensionFilter("*.bin", "bin");
+        chooser.addChoosableFileFilter(filter_binary);
 
         setChanged();
     }
@@ -145,14 +143,31 @@ public class Model extends Observable {
             return;
         }
         playing = true;
+        animation.freeze();
         stage = 0;
         setChanged();
         notifyObservers();
-        final Timer timer = new Timer(12, new ActionListener() {
+        real_play();
+    }
+    
+    public void real_play() {
+        if (stage >= strokes.size() * 100) {
+            playing = false;
+            setChanged();
+            notifyObservers();
+            return;
+        }
+        int index = stage / 100;
+        long start_time = strokes.get(index).points.get(0).time;
+        long end_time = strokes.get(index).points.get(strokes.get(index).points.size() - 1).time;
+        long duration = end_time - start_time;
+        int interval = (int)duration / 100;
+        final Timer timer = new Timer(interval, new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                if (stage >= strokes.size() * 100) {
+                if (stage >= (index + 1) * 100) {
                     ((Timer)evt.getSource()).stop();
-                    playing = false;
+                    real_play();
+                    return;
                 }
                 stage++;
                 setChanged();
@@ -163,19 +178,45 @@ public class Model extends Observable {
     }
 
     public void reverse() {
+        if (playing) {
+            return;
+        }
+        playing = true;
+        animation.freeze();
+        stage = 0;
+        setChanged();
+        notifyObservers();
+        real_reverse();
         // If the animation is already playing, avoid starting another timer.
         if (playing) {
             return;
         }
         playing = true;
+        animation.freeze();
         stage = strokes.size() * 100;
         setChanged();
         notifyObservers();
-        final Timer timer = new Timer(12, new ActionListener() {
+        real_reverse();
+    }
+
+    public void real_reverse() {
+        if (stage <= 0) {
+            playing = false;
+            setChanged();
+            notifyObservers();
+            return;
+        }
+        int index = (stage / 100) - 1;
+        long start_time = strokes.get(index).points.get(0).time;
+        long end_time = strokes.get(index).points.get(strokes.get(index).points.size() - 1).time;
+        long duration = end_time - start_time;
+        int interval = (int)duration / 100;
+        final Timer timer = new Timer(interval, new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                if (stage <= 0) {
+                if (stage <= index * 100) {
                     ((Timer)evt.getSource()).stop();
-                    playing = false;
+                    real_reverse();
+                    return;
                 }
                 stage--;
                 setChanged();
@@ -184,6 +225,7 @@ public class Model extends Observable {
         });
         timer.start();
     }
+
 
     public void start() {
         stage = 0;
@@ -195,6 +237,22 @@ public class Model extends Observable {
         stage = strokes.size() * 100;
         setChanged();
         notifyObservers();
+    }
+
+    public void newDoodle() {
+        Object[] options = {"Yes", "No"};
+        int options_index = JOptionPane.showOptionDialog(frame, "Proceed without saving?", "Warning: About to lose data!",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    options,
+                    options[1]);
+        if (options_index == 0) {
+            strokes.clear();
+            stage = 0;
+            setChanged();
+            notifyObservers();
+        }
     }
 
     public float Float(String s) {
@@ -214,109 +272,173 @@ public class Model extends Observable {
     }
 
     public void selectFile() {
+        Object[] options = {"Yes", "No"};
+        int options_index = JOptionPane.showOptionDialog(frame, "Proceed without saving?", "Warning: About to lose data!",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    options,
+                    options[1]);
+        if (options_index == 1) {
+            return;
+        }
         int result = chooser.showOpenDialog(frame);
         if (result == chooser.APPROVE_OPTION) {
+            String extension = "";
             String path = chooser.getSelectedFile().getAbsolutePath();
             String fileName = chooser.getSelectedFile().getName();
-            String line = null;
-            try {
-                FileReader fileReader = new FileReader(path);
-                BufferedReader bufferedReader = new BufferedReader(fileReader);
-                ArrayList<Stroke> stroke_import = new ArrayList<Stroke>();
+            if (path.endsWith(".txt")) {
+                extension = ".txt";
+            }
+            else if (path.endsWith(".bin")) {
+                extension = ".bin";
+            }
+            else {
+                return;
+            }
+            
+            if (extension.equals(".txt")) {
                 try {
-                    line = bufferedReader.readLine();
-                    int size = Int(line);
-                    for (int i = 0; i < size; ++i) {
-                        line = bufferedReader.readLine();
-                        int width = Int(line);
-                        line = bufferedReader.readLine();
-                        int blue = Int(line);
-                        line = bufferedReader.readLine();
-                        int red = Int(line);
-                        line = bufferedReader.readLine();
-                        int green = Int(line);
-                
-                        Stroke stroke = new Stroke(new ArrayList<Pair>(), new Color(red, green, blue), width);   
-                        stroke.complete = true;
+                    FileReader fileReader = new FileReader(path);
+                    BufferedReader bufferedReader = new BufferedReader(fileReader);
+                    ArrayList<Stroke> stroke_import = new ArrayList<Stroke>();
+                    try {
+                        int size = Int(bufferedReader.readLine());
+                        for (int i = 0; i < size; ++i) {
+                            int width = Int(bufferedReader.readLine());
+                            int blue = Int(bufferedReader.readLine());
+                            int red = Int(bufferedReader.readLine());
+                            int green = Int(bufferedReader.readLine());
+                    
+                            Stroke stroke = new Stroke(new ArrayList<Pair>(), new Color(red, green, blue), width);   
+                            stroke.complete = true;
 
-                        line = bufferedReader.readLine();
-                        int pointListSize = Int(line);
-System.out.println("DDDDDDDDDDDDDDDDDDDDD: " + pointListSize);
-                        for(int j = 0; j < pointListSize; ++j) {
-                            float x = Float(bufferedReader.readLine());
-                            float y = Float(bufferedReader.readLine());
-                            long time = Long.parseLong(bufferedReader.readLine());
-                            stroke.points.add(new Pair(x, y, time));
+                            int number_of_points = Int(bufferedReader.readLine());
+                            for(int j = 0; j < number_of_points; ++j) {
+                                float x = Float(bufferedReader.readLine());
+                                float y = Float(bufferedReader.readLine());
+                                long time = Long.parseLong(bufferedReader.readLine());
+                                stroke.points.add(new Pair(x, y, time));
+                            }
+                            stroke_import.add(stroke);
                         }
-System.out.println("KKKKKKKKKKKKKKKKKKKKK: " + stroke.points.size());
-                        stroke_import.add(stroke);
+                    } finally {
+                        bufferedReader.close();
                     }
-                } finally {
-                    bufferedReader.close();
+                    strokes = stroke_import;
+                    stage = strokes.size() * 100;
+                    setChanged();
+                    notifyObservers();
+                } 
+                catch(FileNotFoundException ex) {
+                    System.out.println(ex);         
+                } catch(IOException ex) {
+                    System.out.println(ex);
                 }
-                strokes = stroke_import;
-System.out.println(strokes.size());
-                stage = strokes.size() * 100;
-System.out.println(stage);
-                setChanged();
-                notifyObservers();
-            } 
-            catch(FileNotFoundException ex) {
-                System.out.println("Unable to open file '" + fileName + "'");       
-                System.out.println(ex);         
-            } catch(IOException ex) {
-                System.out.println("Error reading file '" + fileName + "'");                  
+            }
+            else if (extension.equals(".bin")) {
+               try {
+                    InputStream file = new FileInputStream(path);
+                    InputStream buffer = new BufferedInputStream(file);
+                    ObjectInput in = new ObjectInputStream(buffer);
+                    ArrayList<Stroke> input_strokes = new ArrayList<Stroke>();
+
+                    try {
+                        Object first = in.readObject();
+                        strokes = (ArrayList<Stroke>)first;
+                        stage = strokes.size() * 100;
+                        setChanged();
+                        notifyObservers();
+                    } catch(ClassNotFoundException ex) {
+                        System.out.println(ex);
+                    } finally {
+                        in.close();
+                    }
+                } catch (IOException ex) {
+                    System.out.println(ex);
+                } 
             }
         }
     }
 
     public void saveFile() {
         int result = chooser.showSaveDialog(frame);
-        if (chooser.getSelectedFile() == null) {
+        String extension;
+        if (result == chooser.APPROVE_OPTION) {
+            String desc = chooser.getFileFilter().getDescription();
+            if (desc.equals("*.txt")) {
+                extension = ".txt";
+            }
+            else if (desc.equals("*.bin")) {
+                extension = ".bin";
+            }
+            else {
+                extension = ".txt";
+            }
+        }
+        else {
             return;
         }
-        String path = chooser.getSelectedFile().getAbsolutePath() + ".doodle";
-        String fileName = chooser.getSelectedFile().getName() + ".doodle";
-            
-        try {
-            FileWriter fileWriter = new FileWriter(path);
-            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
 
+        String path = chooser.getSelectedFile().getAbsolutePath() + extension;
+        String fileName = chooser.getSelectedFile().getName() + extension;
+        
+        if (extension.equals(".txt")) {    
             try {
-                bufferedWriter.write(String.valueOf(strokes.size()));
-                bufferedWriter.newLine();
-                for (int i = 0; i < strokes.size(); ++i) {
-                    Stroke stroke = strokes.get(i);
-                    
-                    bufferedWriter.write(String.valueOf(stroke.width));
-                    bufferedWriter.newLine();
+                FileWriter fileWriter = new FileWriter(path);
+                BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
 
-                    bufferedWriter.write(String.valueOf(stroke.color.getBlue()));
+                try {
+                    bufferedWriter.write(String.valueOf(strokes.size()));
                     bufferedWriter.newLine();
-                    bufferedWriter.write(String.valueOf(stroke.color.getRed()));
-                    bufferedWriter.newLine();
-                    bufferedWriter.write(String.valueOf(stroke.color.getGreen()));
-                    bufferedWriter.newLine();
+                    for (int i = 0; i < strokes.size(); ++i) {
+                        Stroke stroke = strokes.get(i);
+                        
+                        bufferedWriter.write(String.valueOf(stroke.width));
+                        bufferedWriter.newLine();
 
-                    ArrayList<Pair> points = stroke.points;
-                    bufferedWriter.write(String.valueOf(points.size()));
-                    bufferedWriter.newLine();
-                    for(int j = 0; j < points.size(); ++j) {
-                        bufferedWriter.write(String.valueOf(points.get(j).X()));
+                        bufferedWriter.write(String.valueOf(stroke.color.getBlue()));
                         bufferedWriter.newLine();
-                        bufferedWriter.write(String.valueOf(points.get(j).Y()));
+                        bufferedWriter.write(String.valueOf(stroke.color.getRed()));
                         bufferedWriter.newLine();
-                        bufferedWriter.write(String.valueOf(points.get(j).getTime()));
+                        bufferedWriter.write(String.valueOf(stroke.color.getGreen()));
                         bufferedWriter.newLine();
+
+                        ArrayList<Pair> points = stroke.points;
+                        bufferedWriter.write(String.valueOf(points.size()));
+                        bufferedWriter.newLine();
+                        for(int j = 0; j < points.size(); ++j) {
+                            bufferedWriter.write(String.valueOf(points.get(j).X()));
+                            bufferedWriter.newLine();
+                            bufferedWriter.write(String.valueOf(points.get(j).Y()));
+                            bufferedWriter.newLine();
+                            bufferedWriter.write(String.valueOf(points.get(j).getTime()));
+                            bufferedWriter.newLine();
+                        }
                     }
-                }
-            } finally { 
-                bufferedWriter.close();
-            }                   
+                } finally { 
+                    bufferedWriter.close();
+                }                   
 
+            }
+            catch(IOException ex) {
+                System.out.println(ex);
+            }
         }
-        catch(IOException ex) {
-            System.out.println("Error writing to file '" + fileName + "'");
+        else if (extension == ".bin") {
+            try {
+                OutputStream file = new FileOutputStream(path);
+                OutputStream buffer = new BufferedOutputStream(file);
+                ObjectOutput out = new ObjectOutputStream(buffer);
+                try {
+                    out.writeObject(strokes);
+                } finally {
+                    out.close();
+                }
+            }
+            catch (IOException ex) {
+                System.out.println(ex);
+            }
         }
     }   
     
@@ -343,7 +465,16 @@ System.out.println(stage);
     }
 
     public void exit() {
-        frame.dispose();
+        Object[] options = {"Yes", "No"};
+        int options_index = JOptionPane.showOptionDialog(frame, "Proceed without saving?", "Warning: About to lose data!",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    options,
+                    options[1]);
+        if (options_index == 0) {
+            frame.dispose();
+        }
     }
 
     public int getStage() {
@@ -402,6 +533,14 @@ System.out.println(stage);
 
     public JFrame getFrame() {
         return frame;
+    }
+
+    public boolean isPlaying() {
+        return playing;
+    }
+
+    public void setAnimation(Animation a) {
+        animation = a;
     }
 }
 

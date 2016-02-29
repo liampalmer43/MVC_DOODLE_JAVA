@@ -58,7 +58,10 @@ class Animation extends JPanel implements Observer {
         slider.setMinorTickSpacing(10);
         slider.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent event) { 
-                model.setStage(slider.getValue());
+                if (!model.isPlaying()) {
+System.out.println(slider.getValue());
+                    model.setStage(slider.getValue());
+                }
             }
         });
         this.add(slider, BorderLayout.CENTER);
@@ -76,6 +79,14 @@ class Animation extends JPanel implements Observer {
         model = model_;
     } 
 
+    public void freeze() {
+        start.setEnabled(false);
+        end.setEnabled(false);
+        play.setEnabled(false);
+        reverse.setEnabled(false);
+        slider.setEnabled(false);
+    }
+
     // Observer interface 
     @Override
     public void update(Observable arg0, Object arg1) {
@@ -83,6 +94,14 @@ class Animation extends JPanel implements Observer {
         // Otherwise, setMaximum will change the slider and make its change handler call,
         // updating model.getStage() inappropriately.
         int number_of_strokes = model.getCompleteStrokes();
+        if (!model.isPlaying()) {
+            start.setEnabled(number_of_strokes != 0);
+            end.setEnabled(number_of_strokes != 0);
+            play.setEnabled(number_of_strokes != 0);
+            reverse.setEnabled(number_of_strokes != 0);
+            slider.setEnabled(number_of_strokes != 0);
+        }        
+
         int stage = model.getStage();
         slider.setMaximum(number_of_strokes * 100);
         slider.setValue(stage);
