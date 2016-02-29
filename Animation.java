@@ -20,6 +20,7 @@ class Animation extends JPanel implements Observer {
 
     JSlider slider = new JSlider(0, 0, 0);
     JButton play = new JButton("Play");
+    JButton reverse = new JButton("Reverse");
     JButton start = new JButton("Start");
     JButton end = new JButton("End");
 
@@ -30,11 +31,17 @@ class Animation extends JPanel implements Observer {
         // create the view UI
         this.setLayout(new BorderLayout());
         play.setPreferredSize(new Dimension(70, 30));
+        reverse.setPreferredSize(new Dimension(70, 30));
         start.setPreferredSize(new Dimension(70, 30));
         end.setPreferredSize(new Dimension(70, 30));
         play.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 model.play();
+            }
+        }); 
+        reverse.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                model.reverse();
             }
         }); 
         start.addActionListener(new ActionListener() {
@@ -54,12 +61,16 @@ class Animation extends JPanel implements Observer {
                 model.setStage(slider.getValue());
             }
         });
-        this.add(play, BorderLayout.LINE_START);
         this.add(slider, BorderLayout.CENTER);
         JPanel button_group = new JPanel(new GridLayout(1, 2, 5, 5));
         button_group.setPreferredSize(new Dimension(140, 30));
         button_group.add(start);
         button_group.add(end);
+        JPanel button_group_2 = new JPanel(new GridLayout(1, 2, 5, 5));
+        button_group_2.setPreferredSize(new Dimension(140, 30));
+        button_group_2.add(play);
+        button_group_2.add(reverse);
+        this.add(button_group_2, BorderLayout.LINE_START);
         this.add(button_group, BorderLayout.LINE_END);
 
         model = model_;
@@ -68,9 +79,6 @@ class Animation extends JPanel implements Observer {
     // Observer interface 
     @Override
     public void update(Observable arg0, Object arg1) {
-//        if (model.getPoints().size() * 100 == slider.getMaximum()) {
-//            return;
-//        }
         // Must get the stage value before calling setMaximum.
         // Otherwise, setMaximum will change the slider and make its change handler call,
         // updating model.getStage() inappropriately.
