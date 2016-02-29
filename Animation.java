@@ -58,10 +58,7 @@ class Animation extends JPanel implements Observer {
         slider.setMinorTickSpacing(10);
         slider.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent event) { 
-                if (!model.isPlaying()) {
-System.out.println(slider.getValue());
-                    model.setStage(slider.getValue());
-                }
+                model.setStage(slider.getValue());
             }
         });
         this.add(slider, BorderLayout.CENTER);

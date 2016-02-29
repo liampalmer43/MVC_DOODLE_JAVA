@@ -8,7 +8,7 @@ public class Main{
 
     public static void main(String[] args){ 
         JFrame frame = new JFrame("Doodle Wizard");
-        frame.setMinimumSize(new Dimension(400, 300));
+        frame.setMinimumSize(new Dimension(400, 350));
         
         // create Model and initialize it
         Model model = new Model();
@@ -39,8 +39,10 @@ public class Main{
         p1.add(new JPanel());
 
         JScrollPane fixed_view = new JScrollPane(p1);
+        fixed_view.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         JPanel full_view = new JPanel(new GridLayout(1,1));
         full_view.add(board);
+        full_view.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         Menu menu = new Menu(model);
         model.addObserver(menu);

@@ -51,7 +51,6 @@ class LineWidth extends JPanel implements Observer {
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     model.setWidth(width);
-                    System.out.println(width);
                 }
             });
             panels.add(new_panel);
@@ -61,6 +60,7 @@ class LineWidth extends JPanel implements Observer {
         for (int i = 0; i < panels.size(); ++i) {
             this.add(panels.get(i));
         }
+        this.setBorder(BorderFactory.createEmptyBorder(0, 5, 5, 5));
         
         // set the model 
         model = model_;

@@ -12,7 +12,8 @@ CLASSES = \
     Menu.java \
     DrawingBoard.java \
     Palette.java \
-    LineWidth.java
+    LineWidth.java \
+    Model.java
 
 MAIN = Main
 

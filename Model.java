@@ -240,14 +240,22 @@ public class Model extends Observable {
     }
 
     public void newDoodle() {
-        Object[] options = {"Yes", "No"};
-        int options_index = JOptionPane.showOptionDialog(frame, "Proceed without saving?", "Warning: About to lose data!",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.QUESTION_MESSAGE,
-                    null,
-                    options,
-                    options[1]);
-        if (options_index == 0) {
+        if (strokes.size() > 0) {
+            Object[] options = {"Yes", "No"};
+            int options_index = JOptionPane.showOptionDialog(frame, "Proceed without saving?", "Warning: About to lose data!",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        options,
+                        options[1]);
+            if (options_index == 0) {
+                strokes.clear();
+                stage = 0;
+                setChanged();
+                notifyObservers();
+            }
+        }
+        else {
             strokes.clear();
             stage = 0;
             setChanged();
@@ -272,15 +280,17 @@ public class Model extends Observable {
     }
 
     public void selectFile() {
-        Object[] options = {"Yes", "No"};
-        int options_index = JOptionPane.showOptionDialog(frame, "Proceed without saving?", "Warning: About to lose data!",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.QUESTION_MESSAGE,
-                    null,
-                    options,
-                    options[1]);
-        if (options_index == 1) {
-            return;
+        if (strokes.size() > 0) {
+            Object[] options = {"Yes", "No"};
+            int options_index = JOptionPane.showOptionDialog(frame, "Proceed without saving?", "Warning: About to lose data!",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        options,
+                        options[1]);
+            if (options_index == 1) {
+                return;
+            }
         }
         int result = chooser.showOpenDialog(frame);
         if (result == chooser.APPROVE_OPTION) {
@@ -465,14 +475,19 @@ public class Model extends Observable {
     }
 
     public void exit() {
-        Object[] options = {"Yes", "No"};
-        int options_index = JOptionPane.showOptionDialog(frame, "Proceed without saving?", "Warning: About to lose data!",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.QUESTION_MESSAGE,
-                    null,
-                    options,
-                    options[1]);
-        if (options_index == 0) {
+        if (strokes.size() > 0) {
+            Object[] options = {"Yes", "No"};
+            int options_index = JOptionPane.showOptionDialog(frame, "Proceed without saving?", "Warning: About to lose data!",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        options,
+                        options[1]);
+            if (options_index == 0) {
+                frame.dispose();
+            }
+        }
+        else {
             frame.dispose();
         }
     }

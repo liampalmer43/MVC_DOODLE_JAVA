@@ -44,7 +44,6 @@ class Palette extends JPanel implements Observer {
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     model.setColor(color);
-                    System.out.println(color);
                 }
             });
             panels.add(new_panel);
@@ -62,6 +61,7 @@ class Palette extends JPanel implements Observer {
             this.add(panels.get(i));
         }
         this.add(button);
+        this.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         
         // set the model 
         model = model_;
@@ -74,7 +74,6 @@ class Palette extends JPanel implements Observer {
                     @Override
                     public void actionPerformed(ActionEvent actionEvent) {
                         model.setColor(options.getColor());
-                        System.out.println(options.getColor());
                     }
                 };
                 options.setColor(model.getColor());
